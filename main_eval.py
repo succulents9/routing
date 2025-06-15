@@ -3,9 +3,11 @@ from env.LEO_network import SatelliteNetwork
 from DQN.QMIX import RegionRouter
 from scipy.constants import c
 
+
 def evaluate_route(agent, env, task):
     if task['source_node'] == task['destination_node']:
         raise ValueError(f"源节点和目标节点不能相同: {task['source_node']}")
+        
     state = env.reset_task(task)
     done = False
 
@@ -35,6 +37,7 @@ def evaluate_route(agent, env, task):
     }
     return metrics
 
+
 def evaluate_full_task(agents_dict, region_envs, sat_network, task):
     region_router = RegionRouter(sat_network.inter_region_gateways)
     src = task['source_node']
@@ -55,14 +58,17 @@ def evaluate_full_task(agents_dict, region_envs, sat_network, task):
     if src_region == dst_region:
         env = region_envs[src_region]
         agent = agents_dict[src_region]
+
         if dst not in env.node_id_to_index:
             raise ValueError(f"目标节点 {dst} 不在区域 {src_region} 的环境中")
+
         local_task = task.copy()
         metrics = evaluate_route(agent, env, local_task)
         total_delay += metrics['delay']
         total_packets += metrics['delivery_packet']
         total_loss += metrics['loss']
         total_util += metrics['util']
+
         throughput = (total_packets * 160000) / (total_delay / 1000) if total_delay > 0 else 0
         return total_delay, total_packets / packet_num, total_loss / packet_num, total_util, throughput
 
@@ -71,9 +77,11 @@ def evaluate_full_task(agents_dict, region_envs, sat_network, task):
         if not gateways:
             raise ValueError(f"找不到从 {src_region} 到 {dst_region} 的网关对")
         g_src, g_dst = gateways
+
         env = region_envs[src_region]
         if g_src not in env.node_id_to_index:
             raise ValueError(f"网关节点 {g_src} 不在区域 {src_region} 的环境中")
+
         if src != g_src:
             sub_task = {
                 'src_region': src_region,
@@ -82,12 +90,14 @@ def evaluate_full_task(agents_dict, region_envs, sat_network, task):
                 'destination_node': g_src,
                 'flow_demand': task['flow_demand'],
             }
+
             agent = agents_dict[src_region]
             metrics = evaluate_route(agent, env, sub_task)
             total_delay += metrics['delay']
             total_packets += metrics['delivery_packet']
             total_loss += metrics['loss']
             total_util += metrics['util']
+
         p1 = sat_network.satellite_dict[g_src].get_position_at_time(0)
         p2 = sat_network.satellite_dict[g_dst].get_position_at_time(0)
         region_delay = SatelliteNetwork.calculate_distance(p1, p2) / c
@@ -100,6 +110,7 @@ def evaluate_full_task(agents_dict, region_envs, sat_network, task):
         dst_env = region_envs[dst_region]
         if dst not in dst_env.node_id_to_index:
             raise ValueError(f"目标节点 {dst} 不在区域 {dst_region} 的环境中")
+
         sub_task = {
             'src_region': dst_region,
             'dst_region': dst_region,
@@ -109,11 +120,14 @@ def evaluate_full_task(agents_dict, region_envs, sat_network, task):
         }
         env = region_envs[dst_region]
         agent = agents_dict[dst_region]
+
         metrics = evaluate_route(agent, env, sub_task)
+
         total_delay += metrics['delay']
         total_packets += metrics['delivery_packet']
         total_loss += metrics['loss']
         total_util += metrics['util']
 
     throughput = (total_packets * 160000) / (total_delay / 1000) if total_delay > 0 else 0
+
     return total_delay, total_packets / packet_num, total_loss / packet_num, total_util, throughput

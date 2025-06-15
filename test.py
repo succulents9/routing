@@ -1,5 +1,4 @@
 from env.LEO_network import SatelliteNetwork
-import networkx as nx
 
 sat_network = SatelliteNetwork("e:\\GNN+DRL\\sat_data_1616.txt")
 sat_network.run_simulation(0)
@@ -8,7 +7,7 @@ print("区域卫星分布情况:")
 for region_id in range(1, 17):
     satellites = sat_network.region_satellites.get(region_id, [])
     print(f"区域 {region_id} 包含 {len(satellites)} 个卫星:")
-    if satellites:
+    if len(satellites) > 0:
         print(f"  前几个卫星ID: {satellites[:10]}")
         if len(satellites) > 10:
             print(f"  ... 等共 {len(satellites)} 个")

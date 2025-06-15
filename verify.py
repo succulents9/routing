@@ -21,6 +21,7 @@ def generate_tasks(task_baseline, region_envs):
     task_to_num_tasks = {2: 300, 3: 200, 4: 200, 5: 80, 6: 75, 7: 50, 8: 50, 9: 50, 10: 50}
 
     all_regions = list(range(1, 17))
+
     region_total_flows = [r * task_baseline for r in demand_ratios]
     num_tasks = task_to_num_tasks[task_baseline]
 
@@ -40,21 +41,21 @@ def generate_tasks(task_baseline, region_envs):
             continue
 
         src_region = region_idx + 1
+
         if src_region not in region_envs:
-            print(f"跳过区域 {src_region}，因为没有对应的环境")
             continue
 
         src_env = region_envs[src_region]
         valid_src_nodes = list(src_env.node_id_to_index.keys())
 
         if not valid_src_nodes:
-            print(f"跳过区域 {src_region}，因为没有有效的节点")
             continue
 
         avg_flow = region_total_flows[region_idx] / task_count
         for i in range(task_count):
             source_node = random.choice(valid_src_nodes)
-            p = {2: 0.5, 3: 0.53, 4: 0.58, 5: 0.63, 6: 0.7, 7: 0.7, 8: 0.75, 9:0.8 , 10: 0.85}
+            p = {2: 0.5, 3: 0.53, 4: 0.58, 5: 0.63, 6: 0.7, 7: 0.7, 8: 0.75, 9: 0.8, 10: 0.85}
+
             if random.random() < p[task_baseline]:
                 dst_region_candidates = [r for r in all_regions if
                                          r != src_region and demand_ratios[r - 1] > 0 and r in region_envs]
@@ -66,20 +67,17 @@ def generate_tasks(task_baseline, region_envs):
                 dst_region = src_region
 
             if dst_region not in region_envs:
-                print(f"跳过目标区域 {dst_region}，因为没有对应的环境")
                 continue
 
             dst_env = region_envs[dst_region]
             valid_dst_nodes = list(dst_env.node_id_to_index.keys())
 
             if not valid_dst_nodes:
-                print(f"跳过目标区域 {dst_region}，因为没有有效的节点")
                 continue
 
             if dst_region == src_region:
                 valid_dst_nodes = [n for n in valid_dst_nodes if n != source_node]
                 if not valid_dst_nodes:
-                    print(f"区域 {dst_region} 中没有不同于源节点的目标节点")
                     continue
 
             destination_node = random.choice(valid_dst_nodes)
@@ -96,7 +94,6 @@ def generate_tasks(task_baseline, region_envs):
 
     print(f"生成了 {len(tasks)} 个有效任务")
     return tasks
-
 
 def load_region_models(region_ids, node_dim, edge_dim, hidden_dim, action_dim,
                        model_path_template="C:/Users/49753/Desktop/GNN+DRL_0424V2/saved_models/region_{}_model_16.pth"):
@@ -121,10 +118,6 @@ def load_region_models(region_ids, node_dim, edge_dim, hidden_dim, action_dim,
 
 
 if __name__ == "__main__":
-    import os
-    import traceback
-    import torch
-
     region_num = 16
 
     node_dim = 1
@@ -159,12 +152,12 @@ if __name__ == "__main__":
 
         tasks = generate_tasks(total_flow, region_envs)
         total_tasks = len(tasks)
-        print(f"开始处理 {total_tasks} 个任务...")
+        print(f"开始处理任务...")
 
         for task_idx, task in enumerate(tasks):
             try:
                 delay, delivery_rate, loss, link_u = evaluate_full_task(agents_dict, region_envs, sat_network,
-                                                                         task)
+                                                                                 task)
                 delay_list.append(delay)
                 loss_list.append(loss)
                 link_u_list.append(link_u)
@@ -192,4 +185,4 @@ if __name__ == "__main__":
             delay_list, loss_list, link_u_list,
             delivery_rate_list,
             save_dir=f"new_result"
-        )
+    )
